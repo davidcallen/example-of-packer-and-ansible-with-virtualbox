@@ -1,7 +1,7 @@
 Packer and Ansible with VirtualBox
 ==================================
 
-This git repository contains an example of using Packer and Ansible to create a CentOS 7 virtual box machine image.
+This git repository contains an example of using Packer and Ansible to create a CentOS 7 VirtualBox machine image.
 
 There did not seem to be much information out there on the internet for this so it seemed worthwhile to pass on this knowledge.
 
@@ -144,7 +144,7 @@ This image is built upon the centos-7-from-iso OVF image.
 It obtains this image from ```centos-7-from-iso/output``` directory.
 
 The ```centos-7-base``` image is intended to be a base image for all our other image builds and so we want to include into it some fundamentals such as :
-- an administrative user ```centos``` (seperate and distinct from root user). This is similar as in AWS CentOS AMI images.
+- an administrative user ```centos``` (seperate and distinct from root user). This is similar to AWS CentOS AMI images.
 - run the ```yum update``` to fully update the system
 - install ```yum-cron``` package to update the system nightly 
 
@@ -167,7 +167,7 @@ source "virtualbox-ovf" "build" {
 
 The filenamepath is found by the ```./packer-build-image.sh``` and exported as an environment variable ```CENTOS_VBOX_ISO_TO_OVF_FILENAMEPATH``` into Packer.
 
-Packer will start the VM using this OVF file. It will pass information into it to cloud-init via an attached floppy disk as defined in ```packer.pkr.hcl``` here :
+Packer will start the VM using this OVF file. It will pass information into it to ```cloud-init``` via an attached floppy disk as defined in ```packer.pkr.hcl``` here :
 
 ```hcl
   floppy_files              = [
@@ -177,7 +177,7 @@ Packer will start the VM using this OVF file. It will pass information into it t
   floppy_label              = "cidata"
 ```    
 
-The cloud-init files are created via the packer HCL :
+The cloud-init files are created via the packer HC, as below :
 
 ```hcl
 locals {
@@ -236,7 +236,7 @@ Above we can see that the Ansible Provisioner is configured to use the new ```ce
 Finally shell scripts are invoked by Packer over the SSH connection to :
 - reboot the VM to ensure the yum updates have been fully applied
 - wait for reboot
-- clean sensitive information (ssh keys and bash history) e.g. 
+- clean sensitive information (ssh keys and bash history) as below :
 
 ```hcl
   provisioner "shell" {
@@ -271,7 +271,7 @@ The following scripts help to create, develop and debug the packer images :
         ```     
     - this enables fixing and re-running of the ansible and is faster than just re-running ```packer-build-image.sh``` 
 - ```ssh-connect-to-packer-builder.sh```
-    - provide convenient SSH connection to a running packer build vm, for debugging purposes.    
+    - provide convenient SSH connection to a running packer build VM, for debugging purposes.    
   
 
 Summary
