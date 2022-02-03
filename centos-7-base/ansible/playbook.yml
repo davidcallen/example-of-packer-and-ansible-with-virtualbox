@@ -1,0 +1,67 @@
+- name: "apply common configuration to all nodes"
+  hosts: all
+  become: yes
+  become_method: sudo
+  vars:
+    yum_update_enabled: "{{ YUM_UPDATE_ENABLED | default(true) }}"
+    install_diagnostic_tools: true
+    log_files_for_purging:
+      - { path: /var/log/messages, owner: root, mode: '0640' }
+      - { path: /var/log/secure, owner: root, mode: '0600' }
+      - { path: /var/log/cloud-init.log, owner: root, mode: '0600' }
+      - { path: /var/log/cloud-init-output.log, owner: root, mode: '0600' }
+
+  # -------------------------------------------   Pre Tasks   -------------------------------------------
+  pre_tasks:
+    - name: "Save IP address for possible ansible debugging"
+      copy:
+        content: "[all]\ncentos@{{ ansible_default_ipv4.address }}"
+        dest: ~/group_vars_static
+
+    - name: "Save IP address locally for ansible debugging"
+      fetch:
+        src: ~/group_vars_static
+        dest: ./group_vars/static
+        flat: yes
+
+  # -------------------------------------------   Roles   --------------------------------------------------
+  # ... no roles needed in this example
+
+  # -------------------------------------------  Example Tasks   -------------------------------------------
+  tasks:
+    - name: "yum update the system (enabled={{ yum_update_enabled }})"
+      yum:
+        update_only: true
+        name: "*"
+        state: latest
+        update_cache: true
+      when: yum_update_enabled | bool
+
+    - name: "yum install overnight cron yum updater to keep system up-to-date"
+      yum:
+        name:
+          - yum-cron
+
+    - name: "Enable yum cron"
+      lineinfile:
+        path: /etc/yum/yum-cron.conf
+        # Change the line to enable updates
+        regexp: '^apply_updates = no$'
+        line: 'apply_updates = yes'
+        state: present
+      tags: [prepare]
+
+
+  # -------------------------------------------   Post Tasks   -------------------------------------------
+  post_tasks:
+    - name: "Check for log files to purge"
+      stat: path="{{ item.path }}"
+      with_items: "{{ log_files_for_purging }}"
+      register: log_files_for_purging_check
+      tags: [logs]
+
+    - name: "Ensure we have empty log files from when image was created"
+      shell: "truncate --size=0 {{ item.stat.path }}"
+      when: "{{ item.stat.exists | bool}} == true"
+      with_items: "{{ log_files_for_purging_check.results }}"
+      tags: [logs]

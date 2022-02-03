@@ -1,0 +1,4 @@
+*/ansible/group_vars/static
+*/ansible/roles/*
+*/ansible.log
+*/packer.log
